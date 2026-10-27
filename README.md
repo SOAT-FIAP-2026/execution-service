@@ -115,7 +115,7 @@ dotnet test
 
 - [x] **Etapa 0** — Pacote de contratos `Fiap.TechChallenge.Contracts`
 - [x] **Etapa 1** — Repositório, solução, Dockerfile e docker-compose
-- [ ] **Etapa 2** — Domínio (agregado `OrdemProducao` e máquina de estados)
+- [x] **Etapa 2** — Domínio (agregado `OrdemProducao` e máquina de estados)
 - [ ] **Etapa 3** — Persistência (PostgreSQL + EF Core)
 - [ ] **Etapa 4** — Casos de uso e API REST
 - [ ] **Etapa 5** — Mensageria e Saga (MassTransit + Outbox/Inbox)

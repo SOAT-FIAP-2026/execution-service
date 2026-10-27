@@ -18,7 +18,7 @@ public class LayerDependencyTests
     [Fact]
     public void Domain_nao_deve_depender_de_outras_camadas_nem_de_frameworks()
     {
-        var result = Types.InAssembly(typeof(Domain.AssemblyReference).Assembly)
+        var result = Types.InAssembly(typeof(global::Fiap.TechChallenge.Execution.Domain.AssemblyReference).Assembly)
             .ShouldNot()
             .HaveDependencyOnAny(Application, Infrastructure, Api,
                 "Microsoft.EntityFrameworkCore", "MassTransit", "Microsoft.AspNetCore")
@@ -30,7 +30,7 @@ public class LayerDependencyTests
     [Fact]
     public void Application_nao_deve_depender_de_Infrastructure_nem_de_Api()
     {
-        var result = Types.InAssembly(typeof(Application.AssemblyReference).Assembly)
+        var result = Types.InAssembly(typeof(global::Fiap.TechChallenge.Execution.Application.AssemblyReference).Assembly)
             .ShouldNot()
             .HaveDependencyOnAny(Infrastructure, Api, "Microsoft.EntityFrameworkCore", "Microsoft.AspNetCore")
             .GetResult();
@@ -41,7 +41,7 @@ public class LayerDependencyTests
     [Fact]
     public void Infrastructure_nao_deve_depender_de_Api()
     {
-        var result = Types.InAssembly(typeof(Infrastructure.AssemblyReference).Assembly)
+        var result = Types.InAssembly(typeof(global::Fiap.TechChallenge.Execution.Infrastructure.AssemblyReference).Assembly)
             .ShouldNot()
             .HaveDependencyOn(Api)
             .GetResult();

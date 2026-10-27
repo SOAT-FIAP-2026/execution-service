@@ -1054,18 +1054,18 @@ flowchart LR
 ## 11. Roteiro de Implementação Passo a Passo (Checklist)
 
 ```markdown
-- [ ] **Etapa 0: Preparação e Contratos de Integração**
-  - [ ] Criar o repositório `Fiap.TechChallenge.Contracts` (eventos de integração + envelope com `CorrelationId`, `EventId`, `OccurredAt`) e publicar no GitHub Packages.
+- [x] **Etapa 0: Preparação e Contratos de Integração**
+  - [x] Criar o repositório `Fiap.TechChallenge.Contracts` (eventos de integração + envelope com `CorrelationId`, `EventId`, `OccurredAt`) e publicar no GitHub Packages.
 
-- [ ] **Etapa 1: Repositório e Base**
-  - [ ] Criar o repositório `techchallenge-execution-service` + solução .NET 8 (Api/Application/Domain/Infrastructure).
-  - [ ] `.gitignore`, `.editorconfig`, Dockerfile multi-stage non-root, `docker-compose.yml` (PostgreSQL 16 + RabbitMQ).
+- [x] **Etapa 1: Repositório e Base**
+  - [x] Criar o repositório `techchallenge-execution-service` + solução .NET 8 (Api/Application/Domain/Infrastructure).
+  - [x] `.gitignore`, `.editorconfig`, Dockerfile multi-stage non-root, `docker-compose.yml` (PostgreSQL 16 + RabbitMQ).
   - [ ] Configurar a branch protection da `main`.
 
-- [ ] **Etapa 2: Domínio (DDD)**
-  - [ ] `OrdemProducao` com a máquina de estados completa (diagnóstico ➔ fila ➔ execução ➔ conclusão/cancelamento).
-  - [ ] `TarefaProducao`, `Diagnostico`, `ClienteSnapshot`, `VeiculoSnapshot`.
-  - [ ] Testes unitários de todas as transições válidas e inválidas.
+- [x] **Etapa 2: Domínio (DDD)**
+  - [x] `OrdemProducao` com a máquina de estados completa (diagnóstico ➔ fila ➔ execução ➔ conclusão/cancelamento).
+  - [x] `TarefaProducao`, `Diagnostico`, `ClienteSnapshot`, `VeiculoSnapshot`.
+  - [x] Testes unitários de todas as transições válidas e inválidas.
 
 - [ ] **Etapa 3: Persistência Relacional (PostgreSQL + EF Core)**
   - [ ] Entity Framework Core 8 com driver Npgsql, `AppDbContext`, mapeamentos Fluent API, Migrations e índices parciais.
