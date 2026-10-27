@@ -382,6 +382,9 @@ stateDiagram-v2
 
 ### 4.2. Fluxo Completo (caminho feliz + compensações)
 
+> [!TIP]
+> Para o detalhamento passo a passo exclusivo da etapa de abertura da OS com os bancos isolados, Outbox e payloads, consulte o documento: [FLUXO_CRIACAO_ORDEM_SERVICO.md](file:///home/gabriel/Desktop/FIAP%20-%20TC/execution-service/docs/FLUXO_CRIACAO_ORDEM_SERVICO.md).
+
 ```mermaid
 sequenceDiagram
     autonumber

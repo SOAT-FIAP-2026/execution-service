@@ -1,0 +1,59 @@
+name: execution-service
+
+services:
+  execution-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: execution-api
+    ports:
+      - "${API_PORT:-8082}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ExecutionDb: "Host=execution-db;Port=5432;Database=${POSTGRES_DB:-techchallenge_execution_db};Username=${POSTGRES_USER:-execution};Password=${POSTGRES_PASSWORD:-execution_local_pwd}"
+      ConnectionStrings__RabbitMq: "amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672/"
+    depends_on:
+      execution-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  execution-db:
+    image: postgres:16-alpine
+    container_name: execution-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-techchallenge_execution_db}
+      POSTGRES_USER: ${POSTGRES_USER:-execution}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-execution_local_pwd}
+    ports:
+      # 5433 no host para não conflitar com o PostgreSQL local do OS Service (5432)
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      - execution-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: execution-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+volumes:
+  execution-db-data:
+  rabbitmq-data:
