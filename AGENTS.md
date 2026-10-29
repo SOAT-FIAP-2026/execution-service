@@ -47,16 +47,16 @@ Referência Mestre: [`docs/PLANO_DESACOPLAMENTO_SERVICO_EXECUCAO.md`](./docs/PLA
 
 ## 2. Catálogo de Agentes Especializados
 
-As definições completas de prompt ficam em [`../.agents/agents/`](../.agents/agents/) e as skills acionáveis em [`../.agents/skills/`](../.agents/skills/):
+As definições completas de prompt ficam em [`.agents/agents/`](./.agents/agents/) e as skills acionáveis em [`.agents/skills/`](./.agents/skills/):
 
 | Agente | Definição | Skill Acionável | Papel |
 |---|---|---|---|
-| **`planner`** | [`.agents/agents/planner.md`](../.agents/agents/planner.md) | `exec-planner` | Decompõe etapas do plano em tarefas por camada, valida pré-requisitos e contratos entre microsserviços. |
-| **`implementer`** | [`.agents/agents/implementer.md`](../.agents/agents/implementer.md) | `exec-implementer` | Implementa código enxuto em .NET 8 respeitando Clean Architecture, DDD, EF Core 8 e `0 Warning(s)`. |
-| **`saga-messaging-guardian`** | [`.agents/agents/saga-messaging-guardian.md`](../.agents/agents/saga-messaging-guardian.md) | `exec-saga-guardian` | Audita e implementa contratos MassTransit v8, URNs, Outbox/Inbox, idempotência e compensações da Saga. |
-| **`qa-bdd-tester`** | [`.agents/agents/qa-bdd-tester.md`](../.agents/agents/qa-bdd-tester.md) | `exec-qa-bdd` | Constrói e executa testes unitários, integração (`Testcontainers`) e BDD (`Reqnroll`), garantindo cobertura ≥ 80%. |
-| **`docs-keeper`** | [`.agents/agents/docs-keeper.md`](../.agents/agents/docs-keeper.md) | `exec-docs-keeper` | Mantém sincronizados `PLANO_DESACOPLAMENTO_SERVICO_EXECUCAO.md`, `database-model.md`, ADRs, Postman e `README.md`. |
-| **`devops-observability`** | [`.agents/agents/devops-observability.md`](../.agents/agents/devops-observability.md) | `exec-devops-otel` | Gerencia Kustomize (`NodePort 30082`), CI/CD GitHub Actions (OIDC), SSM e OpenTelemetry (Prometheus/Loki/Tempo). |
+| **`planner`** | [`.agents/agents/planner.md`](./.agents/agents/planner.md) | `exec-planner` | Decompõe etapas do plano em tarefas por camada, valida pré-requisitos e contratos entre microsserviços. |
+| **`implementer`** | [`.agents/agents/implementer.md`](./.agents/agents/implementer.md) | `exec-implementer` | Implementa código enxuto em .NET 8 respeitando Clean Architecture, DDD, EF Core 8 e `0 Warning(s)`. |
+| **`saga-messaging-guardian`** | [`.agents/agents/saga-messaging-guardian.md`](./.agents/agents/saga-messaging-guardian.md) | `exec-saga-guardian` | Audita e implementa contratos MassTransit v8, URNs, Outbox/Inbox, idempotência e compensações da Saga. |
+| **`qa-bdd-tester`** | [`.agents/agents/qa-bdd-tester.md`](./.agents/agents/qa-bdd-tester.md) | `exec-qa-bdd` | Constrói e executa testes unitários, integração (`Testcontainers`) e BDD (`Reqnroll`), garantindo cobertura ≥ 80%. |
+| **`docs-keeper`** | [`.agents/agents/docs-keeper.md`](./.agents/agents/docs-keeper.md) | `exec-docs-keeper` | Mantém sincronizados `PLANO_DESACOPLAMENTO_SERVICO_EXECUCAO.md`, `database-model.md`, ADRs, Postman e `README.md`. |
+| **`devops-observability`** | [`.agents/agents/devops-observability.md`](./.agents/agents/devops-observability.md) | `exec-devops-otel` | Gerencia Kustomize (`NodePort 30082`), CI/CD GitHub Actions (OIDC), SSM e OpenTelemetry (Prometheus/Loki/Tempo). |
 
 ---
 
