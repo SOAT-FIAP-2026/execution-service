@@ -1073,9 +1073,9 @@ flowchart LR
   - [x] `SsmSecretResolver` (mesmo padrão do Billing/OS).
   - [x] Testes de integração com Testcontainers (`postgres:16-alpine`).
 
-- [ ] **Etapa 4: Casos de Uso e API**
-  - [ ] Use cases de diagnóstico, tarefas e cancelamento; queries de fila, detalhes e métricas.
-  - [ ] `ProducaoController` + JWT de staff (claims `Role`/`UsuarioId`) + ProblemDetails + Swagger.
+- [x] **Etapa 4: Casos de Uso e API**
+  - [x] Use cases de diagnóstico, tarefas e cancelamento; queries de fila, detalhes e métricas.
+  - [x] `ProducaoController` + JWT de staff (claims `Role`/`UsuarioId`) + ProblemDetails + Swagger.
 
 - [ ] **Etapa 5: Mensageria e Saga**
   - [ ] MassTransit 8.x + RabbitMQ, Transactional Outbox/Inbox via EF Core (`MassTransit.EntityFrameworkCore`), retry exponencial, DLQ.

@@ -37,14 +37,19 @@ public class OrdemProducaoRepository : IOrdemProducaoRepository
             .AnyAsync(o => o.OrdemServicoId == ordemServicoId, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<OrdemProducao>> ObterFilaProducaoAsync(string? filialId = null, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<OrdemProducao>> ObterFilaProducaoAsync(
+        string? filialId = null,
+        StatusOrdemProducao? status = null,
+        CancellationToken cancellationToken = default)
     {
+        var statusFiltro = status ?? StatusOrdemProducao.NaFila;
+
         var query = _context.OrdensProducao
             .AsNoTracking()
             .Include(o => o.Diagnostico)
             .Include(o => o.Tarefas)
             .AsSplitQuery()
-            .Where(o => o.Status == StatusOrdemProducao.NaFila);
+            .Where(o => o.Status == statusFiltro);
 
         if (!string.IsNullOrWhiteSpace(filialId))
         {
@@ -62,6 +67,7 @@ public class OrdemProducaoRepository : IOrdemProducaoRepository
     {
         var query = _context.OrdensProducao
             .AsNoTracking()
+            .Include(o => o.Tarefas)
             .Where(o => o.Status == StatusOrdemProducao.AguardandoDiagnostico);
 
         if (!string.IsNullOrWhiteSpace(filialId))
@@ -72,6 +78,42 @@ public class OrdemProducaoRepository : IOrdemProducaoRepository
 
         return await query
             .OrderBy(o => o.DataAbertura)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<TarefaProducao>> ObterTarefasConcluidasPorPeriodoAsync(
+        DateTime? de = null,
+        DateTime? ate = null,
+        Guid? idMecanico = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.TarefasProducao
+            .AsNoTracking()
+            .Where(t => t.Status == StatusTarefaProducao.Concluida);
+
+        if (de.HasValue)
+        {
+            var deUtc = de.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(de.Value, DateTimeKind.Utc)
+                : de.Value.ToUniversalTime();
+            query = query.Where(t => t.DataHoraFim >= deUtc);
+        }
+
+        if (ate.HasValue)
+        {
+            var ateUtc = ate.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(ate.Value, DateTimeKind.Utc)
+                : ate.Value.ToUniversalTime();
+            query = query.Where(t => t.DataHoraFim <= ateUtc);
+        }
+
+        if (idMecanico.HasValue && idMecanico.Value != Guid.Empty)
+        {
+            query = query.Where(t => t.IdMecanicoResponsavel == idMecanico.Value);
+        }
+
+        return await query
+            .OrderBy(t => t.DataHoraFim)
             .ToListAsync(cancellationToken);
     }
 

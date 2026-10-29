@@ -1,7 +1,9 @@
+using Fiap.TechChallenge.Execution.Application.Interfaces;
 using Fiap.TechChallenge.Execution.Domain.Interfaces;
 using Fiap.TechChallenge.Execution.Infrastructure.Aws;
 using Fiap.TechChallenge.Execution.Infrastructure.Database;
 using Fiap.TechChallenge.Execution.Infrastructure.Database.Repositories;
+using Fiap.TechChallenge.Execution.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,12 +22,14 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        var ssmResolver = new SsmSecretResolver(configuration);
-        services.AddSingleton(ssmResolver);
+        services.AddSingleton<SsmSecretResolver>(sp =>
+            new SsmSecretResolver(sp.GetService<IConfiguration>() ?? configuration));
 
-        services.AddDbContext<AppDbContext>(options =>
+        services.AddDbContext<AppDbContext>((sp, options) =>
         {
-            var connectionString = ResolveDbConnectionStringOrFallback(configuration, ssmResolver);
+            var runtimeConfig = sp.GetService<IConfiguration>() ?? configuration;
+            var ssmResolver = sp.GetRequiredService<SsmSecretResolver>();
+            var connectionString = ResolveDbConnectionStringOrFallback(runtimeConfig, ssmResolver);
             options.UseNpgsql(connectionString, npgsql =>
             {
                 npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
@@ -33,6 +37,9 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IOrdemProducaoRepository, OrdemProducaoRepository>();
+
+        services.AddSingleton<InMemoryEventPublisher>();
+        services.AddScoped<IEventPublisher>(sp => sp.GetRequiredService<InMemoryEventPublisher>());
 
         return services;
     }

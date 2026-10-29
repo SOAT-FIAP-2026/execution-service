@@ -25,6 +25,19 @@ public sealed class TransicaoEstadoInvalidaException : DomainException
 }
 
 /// <summary>
+/// Lançada quando uma ordem de produção não é encontrada pelo seu ID ou pelo ID da Ordem de Serviço de origem.
+/// </summary>
+public sealed class OrdemProducaoNaoEncontradaException : DomainException
+{
+    public OrdemProducaoNaoEncontradaException(Guid id, bool buscaPorOrdemServico = false)
+        : base(buscaPorOrdemServico
+            ? $"Ordem de produção para a Ordem de Serviço '{id}' não encontrada."
+            : $"Ordem de produção com ID '{id}' não encontrada.")
+    {
+    }
+}
+
+/// <summary>
 /// Lançada quando uma tarefa de produção não é encontrada no agregado.
 /// </summary>
 public sealed class TarefaProducaoNaoEncontradaException : DomainException
