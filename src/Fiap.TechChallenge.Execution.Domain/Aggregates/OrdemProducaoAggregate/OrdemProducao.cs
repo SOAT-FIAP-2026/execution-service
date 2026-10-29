@@ -52,8 +52,8 @@ public class OrdemProducao : EntidadeBase
         {
             Id = Guid.NewGuid(),
             OrdemServicoId = ordemServicoId,
-            Cliente = cliente,
-            Veiculo = veiculo,
+            Cliente = cliente with { },
+            Veiculo = veiculo with { },
             FilialId = string.IsNullOrWhiteSpace(filialId) ? null : filialId.Trim(),
             Status = StatusOrdemProducao.AguardandoDiagnostico,
             DataAbertura = agora,
@@ -76,7 +76,15 @@ public class OrdemProducao : EntidadeBase
 
         var agora = dataHora ?? DateTime.UtcNow;
 
-        Diagnostico = new Diagnostico(Id, idMecanico, nomeMecanico, agora);
+        if (Diagnostico == null)
+        {
+            Diagnostico = new Diagnostico(Id, idMecanico, nomeMecanico, agora);
+        }
+        else
+        {
+            Diagnostico.Reiniciar(idMecanico, nomeMecanico, agora);
+        }
+
         Status = StatusOrdemProducao.EmDiagnostico;
         AtualizarTimestamp();
 

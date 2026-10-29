@@ -44,3 +44,14 @@ public sealed class MecanicoNaoAutorizadoException : DomainException
     {
     }
 }
+
+/// <summary>
+/// Lançada quando ocorre conflito de concorrência otimista (versão divergente) ao persistir alterações no agregado.
+/// </summary>
+public sealed class ConflitoConcorrenciaException : DomainException
+{
+    public ConflitoConcorrenciaException(Guid ordemProducaoId, Exception? innerException = null)
+        : base($"Conflito de concorrência detectado ao atualizar a ordem de produção '{ordemProducaoId}'. O registro foi modificado por outra operação concorrente.", innerException!)
+    {
+    }
+}

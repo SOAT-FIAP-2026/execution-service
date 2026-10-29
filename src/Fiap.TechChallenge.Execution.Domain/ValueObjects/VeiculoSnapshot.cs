@@ -7,9 +7,11 @@ namespace Fiap.TechChallenge.Execution.Domain.ValueObjects;
 /// </summary>
 public sealed record VeiculoSnapshot
 {
-    public string Placa { get; }
-    public string Modelo { get; }
-    public int Ano { get; }
+    public string Placa { get; private init; } = string.Empty;
+    public string Modelo { get; private init; } = string.Empty;
+    public int Ano { get; private init; }
+
+    private VeiculoSnapshot() { }
 
     public VeiculoSnapshot(string placa, string modelo, int ano)
     {

@@ -1067,11 +1067,11 @@ flowchart LR
   - [x] `TarefaProducao`, `Diagnostico`, `ClienteSnapshot`, `VeiculoSnapshot`.
   - [x] Testes unitários de todas as transições válidas e inválidas.
 
-- [ ] **Etapa 3: Persistência Relacional (PostgreSQL + EF Core)**
-  - [ ] Entity Framework Core 8 com driver Npgsql, `AppDbContext`, mapeamentos Fluent API, Migrations e índices parciais.
-  - [ ] `OrdemProducaoRepository` com transações ACID e concorrência otimista (`versao`).
-  - [ ] `SsmSecretResolver` (mesmo padrão do Billing/OS).
-  - [ ] Testes de integração com Testcontainers (`postgres:16-alpine`).
+- [x] **Etapa 3: Persistência Relacional (PostgreSQL + EF Core)**
+  - [x] Entity Framework Core 8 com driver Npgsql, `AppDbContext`, mapeamentos Fluent API, Migrations e índices parciais.
+  - [x] `OrdemProducaoRepository` com transações ACID e concorrência otimista (`versao`).
+  - [x] `SsmSecretResolver` (mesmo padrão do Billing/OS).
+  - [x] Testes de integração com Testcontainers (`postgres:16-alpine`).
 
 - [ ] **Etapa 4: Casos de Uso e API**
   - [ ] Use cases de diagnóstico, tarefas e cancelamento; queries de fila, detalhes e métricas.

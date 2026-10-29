@@ -1,3 +1,5 @@
+using Fiap.TechChallenge.Execution.Infrastructure;
+using Fiap.TechChallenge.Execution.Infrastructure.Database;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
 
@@ -15,8 +17,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Readiness: as verificações de PostgreSQL e RabbitMQ (tag "ready") entram nas Etapas 3 e 5.
-builder.Services.AddHealthChecks();
+builder.Services.AddExecutionInfrastructure(builder.Configuration);
+
+// Readiness: verificação do PostgreSQL (Etapa 3) e RabbitMQ (Etapa 5) com a tag "ready".
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>("postgresql", tags: ["ready"]);
 
 var app = builder.Build();
 

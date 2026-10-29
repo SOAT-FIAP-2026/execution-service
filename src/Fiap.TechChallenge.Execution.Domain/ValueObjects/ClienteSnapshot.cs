@@ -8,9 +8,11 @@ namespace Fiap.TechChallenge.Execution.Domain.ValueObjects;
 /// </summary>
 public sealed record ClienteSnapshot
 {
-    public Guid IdCliente { get; }
-    public string Nome { get; }
-    public string? Telefone { get; }
+    public Guid IdCliente { get; private init; }
+    public string Nome { get; private init; } = string.Empty;
+    public string? Telefone { get; private init; }
+
+    private ClienteSnapshot() { }
 
     public ClienteSnapshot(Guid idCliente, string nome, string? telefone = null)
     {

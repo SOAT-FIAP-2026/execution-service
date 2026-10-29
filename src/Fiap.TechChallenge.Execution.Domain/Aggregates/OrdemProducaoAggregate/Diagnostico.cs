@@ -40,6 +40,24 @@ public class Diagnostico : EntidadeBase
         DataHoraInicio = dataHoraInicio ?? DateTime.UtcNow;
     }
 
+    public void Reiniciar(Guid idMecanico, string nomeMecanico, DateTime? dataHoraInicio = null)
+    {
+        if (idMecanico == Guid.Empty)
+            throw new DomainException("O identificador do mecânico é obrigatório.");
+
+        if (string.IsNullOrWhiteSpace(nomeMecanico))
+            throw new DomainException("O nome do mecânico é obrigatório.");
+
+        IdMecanico = idMecanico;
+        NomeMecanico = nomeMecanico.Trim();
+        DataHoraInicio = dataHoraInicio ?? DateTime.UtcNow;
+        DataHoraFim = null;
+        LaudoTecnico = null;
+        _servicosSugeridos.Clear();
+        _pecasSugeridas.Clear();
+        AtualizarTimestamp();
+    }
+
     public void Finalizar(
         string laudoTecnico,
         IEnumerable<ServicoSugerido>? servicos = null,
@@ -58,11 +76,23 @@ public class Diagnostico : EntidadeBase
 
         _servicosSugeridos.Clear();
         if (servicos != null)
-            _servicosSugeridos.AddRange(servicos);
+        {
+            foreach (var servico in servicos)
+            {
+                servico.AssociarDiagnostico(Id);
+                _servicosSugeridos.Add(servico);
+            }
+        }
 
         _pecasSugeridas.Clear();
         if (pecas != null)
-            _pecasSugeridas.AddRange(pecas);
+        {
+            foreach (var peca in pecas)
+            {
+                peca.AssociarDiagnostico(Id);
+                _pecasSugeridas.Add(peca);
+            }
+        }
 
         AtualizarTimestamp();
     }
@@ -96,6 +126,15 @@ public class ServicoSugerido : EntidadeBase
         IdServicoCatalogo = idServicoCatalogo;
         Descricao = string.IsNullOrWhiteSpace(descricao) ? null : descricao.Trim();
     }
+
+    public void AssociarDiagnostico(Guid diagnosticoId)
+    {
+        if (diagnosticoId == Guid.Empty)
+            throw new DomainException("Diagnóstico inválido.");
+
+        DiagnosticoId = diagnosticoId;
+        AtualizarTimestamp();
+    }
 }
 
 /// <summary>
@@ -121,5 +160,14 @@ public class PecaSugerida : EntidadeBase
         IdPecaCatalogo = idPecaCatalogo;
         Quantidade = quantidade;
         Descricao = string.IsNullOrWhiteSpace(descricao) ? null : descricao.Trim();
+    }
+
+    public void AssociarDiagnostico(Guid diagnosticoId)
+    {
+        if (diagnosticoId == Guid.Empty)
+            throw new DomainException("Diagnóstico inválido.");
+
+        DiagnosticoId = diagnosticoId;
+        AtualizarTimestamp();
     }
 }
