@@ -55,7 +55,7 @@ As definições completas de prompt ficam em [`.agents/agents/`](./.agents/agent
 | **`implementer`** | [`.agents/agents/implementer.md`](./.agents/agents/implementer.md) | `exec-implementer` | Implementa código enxuto em .NET 8 respeitando Clean Architecture, DDD, EF Core 8 e `0 Warning(s)`. |
 | **`saga-messaging-guardian`** | [`.agents/agents/saga-messaging-guardian.md`](./.agents/agents/saga-messaging-guardian.md) | `exec-saga-guardian` | Audita e implementa contratos MassTransit v8, URNs, Outbox/Inbox, idempotência e compensações da Saga. |
 | **`qa-bdd-tester`** | [`.agents/agents/qa-bdd-tester.md`](./.agents/agents/qa-bdd-tester.md) | `exec-qa-bdd` | Constrói e executa testes unitários, integração (`Testcontainers`) e BDD (`Reqnroll`), garantindo cobertura ≥ 80%. |
-| **`docs-keeper`** | [`.agents/agents/docs-keeper.md`](./.agents/agents/docs-keeper.md) | `exec-docs-keeper` | Mantém sincronizados `PLANO_DESACOPLAMENTO_SERVICO_EXECUCAO.md`, `database-model.md`, ADRs, Postman e `README.md`. |
+| **`docs-keeper`** | [`.agents/agents/docs-keeper.md`](./.agents/agents/docs-keeper.md) | `exec-docs-keeper` | Mantém sincronizados `docs/SPEC.md` (especificação viva e contexto), `PLANO_DESACOPLAMENTO_SERVICO_EXECUCAO.md`, `database-model.md`, ADRs, Postman e `README.md`. |
 | **`devops-observability`** | [`.agents/agents/devops-observability.md`](./.agents/agents/devops-observability.md) | `exec-devops-otel` | Gerencia Kustomize (`NodePort 30082`), CI/CD GitHub Actions (OIDC), SSM e OpenTelemetry (Prometheus/Loki/Tempo). |
 
 ---
@@ -73,4 +73,5 @@ Ao iniciar qualquer etapa do roadmap (Etapas 4 a 8):
    - Criar/atualizar testes unitários, de integração com Testcontainers e/ou BDD Reqnroll.
    - Executar `dotnet test` garantindo 100% de aprovação nos testes de unidade, integração e `LayerDependencyTests`.
 4. **Fase 4 — Sincronização Documental (`docs-keeper`):**
+   - Atualizar obrigatoriamente [`docs/SPEC.md`](./docs/SPEC.md) refletindo o comportamento atual, diagramas Mermaid, novas rotas, eventos e contexto de negócio da aplicação.
    - Marcar os itens concluídos `[x]` no checklist de `docs/PLANO_DESACOPLAMENTO_SERVICO_EXECUCAO.md` (Seção 11) e atualizar diagramas, ADRs, collection Postman ou `README.md` afetados pela entrega.

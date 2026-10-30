@@ -38,14 +38,13 @@ public class CancelarProducaoUseCase
         var agora = DateTime.UtcNow;
         ordem.Cancelar(motivo, agora);
 
-        await _repository.AtualizarAsync(ordem, cancellationToken);
-
         var evento = ProducaoCanceladaEvent.Create(
             ordem.OrdemServicoId,
             motivo.Trim(),
             agora);
 
         await _eventPublisher.PublishAsync(evento, cancellationToken);
+        await _repository.AtualizarAsync(ordem, cancellationToken);
 
         return OrdemProducaoResponse.FromDomain(ordem);
     }

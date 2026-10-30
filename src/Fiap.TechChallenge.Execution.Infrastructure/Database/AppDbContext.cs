@@ -1,4 +1,5 @@
 using Fiap.TechChallenge.Execution.Domain.Aggregates.OrdemProducaoAggregate;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fiap.TechChallenge.Execution.Infrastructure.Database;
@@ -22,6 +23,12 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Configuração de tabelas do Transactional Outbox & Inbox do MassTransit
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
+
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }

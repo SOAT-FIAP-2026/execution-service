@@ -34,13 +34,13 @@ public class IniciarTarefaUseCase
         var agora = DateTime.UtcNow;
         var primeiraTarefaIniciada = ordem.IniciarTarefa(tarefaId, idMecanico, nomeMecanico, agora);
 
-        await _repository.AtualizarAsync(ordem, cancellationToken);
-
         if (primeiraTarefaIniciada)
         {
             var evento = ProducaoIniciadaEvent.Create(ordem.OrdemServicoId, agora);
             await _eventPublisher.PublishAsync(evento, cancellationToken);
         }
+
+        await _repository.AtualizarAsync(ordem, cancellationToken);
 
         return OrdemProducaoResponse.FromDomain(ordem);
     }

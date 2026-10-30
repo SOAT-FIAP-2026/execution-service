@@ -33,8 +33,6 @@ public class IniciarDiagnosticoUseCase
         var agora = DateTime.UtcNow;
         ordem.IniciarDiagnostico(idMecanico, nomeMecanico, agora);
 
-        await _repository.AtualizarAsync(ordem, cancellationToken);
-
         var evento = DiagnosticoIniciadoEvent.Create(
             ordem.OrdemServicoId,
             idMecanico,
@@ -42,6 +40,7 @@ public class IniciarDiagnosticoUseCase
             ordem.Diagnostico.DataHoraInicio);
 
         await _eventPublisher.PublishAsync(evento, cancellationToken);
+        await _repository.AtualizarAsync(ordem, cancellationToken);
 
         return OrdemProducaoResponse.FromDomain(ordem);
     }

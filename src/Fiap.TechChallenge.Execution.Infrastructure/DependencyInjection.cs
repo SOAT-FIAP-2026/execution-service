@@ -38,8 +38,11 @@ public static class DependencyInjection
 
         services.AddScoped<IOrdemProducaoRepository, OrdemProducaoRepository>();
 
+        // Registra InMemoryEventPublisher como utilitário para cenários de teste pontual
         services.AddSingleton<InMemoryEventPublisher>();
-        services.AddScoped<IEventPublisher>(sp => sp.GetRequiredService<InMemoryEventPublisher>());
+
+        // Configuração de mensageria assíncrona MassTransit 8.x + RabbitMQ + Transactional Outbox
+        services.AddExecutionMassTransit(configuration);
 
         return services;
     }

@@ -34,8 +34,6 @@ public class FinalizarTarefaUseCase
         var agora = DateTime.UtcNow;
         var todasConcluidas = ordem.FinalizarTarefa(tarefaId, idMecanico, observacoes, agora);
 
-        await _repository.AtualizarAsync(ordem, cancellationToken);
-
         if (todasConcluidas)
         {
             var evento = ProducaoFinalizadaEvent.Create(
@@ -45,6 +43,8 @@ public class FinalizarTarefaUseCase
 
             await _eventPublisher.PublishAsync(evento, cancellationToken);
         }
+
+        await _repository.AtualizarAsync(ordem, cancellationToken);
 
         return OrdemProducaoResponse.FromDomain(ordem);
     }

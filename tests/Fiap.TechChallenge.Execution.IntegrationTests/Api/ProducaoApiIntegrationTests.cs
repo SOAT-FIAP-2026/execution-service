@@ -12,6 +12,7 @@ using Fiap.TechChallenge.Execution.Infrastructure.Messaging;
 using Fiap.TechChallenge.Execution.IntegrationTests.Database;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -38,7 +39,8 @@ public sealed class ProducaoApiIntegrationTests : IClassFixture<WebApplicationFa
                     ["ConnectionStrings:ExecutionDb"] = _dbFixture.ConnectionString,
                     ["Jwt:Secret"] = TestJwtSecret,
                     ["Jwt:Issuer"] = "fiap-tech-challenge",
-                    ["Jwt:Audience"] = "fiap-api"
+                    ["Jwt:Audience"] = "fiap-api",
+                    ["RabbitMq:Transport"] = "InMemory"
                 });
             });
         });
@@ -176,9 +178,14 @@ public sealed class ProducaoApiIntegrationTests : IClassFixture<WebApplicationFa
         metricas!.TotalTarefasConcluidas.Should().Be(2);
         metricas.Mecanicos.Should().ContainSingle(m => m.IdMecanico == idMecanico && m.TarefasConcluidas == 2);
 
-        // 11. Verifica que os eventos de integração foram publicados no InMemoryEventPublisher
-        var publisher = _factory.Services.GetRequiredService<InMemoryEventPublisher>();
-        publisher.PublishedEvents.Should().NotBeEmpty();
+        // 11. Verifica que os eventos de integração foram persistidos atomicamente no Transactional Outbox do PostgreSQL
+        await using (var db = _dbFixture.CreateDbContext())
+        {
+            var totalOutbox = await db.Database
+                .SqlQueryRaw<long>("SELECT count(1) AS \"Value\" FROM \"OutboxMessage\"")
+                .SingleAsync();
+            totalOutbox.Should().BeGreaterThan(0);
+        }
     }
 
     [Fact]

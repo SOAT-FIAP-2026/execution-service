@@ -44,8 +44,6 @@ public class FinalizarDiagnosticoUseCase
         var agora = DateTime.UtcNow;
         ordem.FinalizarDiagnostico(idMecanico, request.LaudoTecnico, servicos, pecas, agora);
 
-        await _repository.AtualizarAsync(ordem, cancellationToken);
-
         var diag = ordem.Diagnostico!;
         var evento = DiagnosticoTecnicoConcluidoEvent.Create(
             osId: ordem.OrdemServicoId,
@@ -59,6 +57,7 @@ public class FinalizarDiagnosticoUseCase
             duracaoMinutos: diag.ObterDuracaoMinutos());
 
         await _eventPublisher.PublishAsync(evento, cancellationToken);
+        await _repository.AtualizarAsync(ordem, cancellationToken);
 
         return OrdemProducaoResponse.FromDomain(ordem);
     }

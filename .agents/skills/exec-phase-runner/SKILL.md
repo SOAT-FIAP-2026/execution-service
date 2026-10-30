@@ -28,4 +28,5 @@ Esta skill padroniza a execução completa de qualquer etapa do [`PLANO_DESACOPL
 
 4. **Etapa D — Documentação (`docs-keeper`):**
    - Siga [`/home/gabriel/me/SOAT/execution-service/.agents/agents/docs-keeper.md`](../../agents/docs-keeper.md).
+   - Atualize obrigatoriamente [`docs/SPEC.md`](../../../docs/SPEC.md) refletindo o comportamento atual, diagramas Mermaid, novos endpoints/eventos e contexto da aplicação.
    - Marque os checkboxes `[x]` concluídos em `docs/PLANO_DESACOPLAMENTO_SERVICO_EXECUCAO.md` e atualize a documentação correspondente (`database-model.md`, ADRs, Postman, `README.md`).
