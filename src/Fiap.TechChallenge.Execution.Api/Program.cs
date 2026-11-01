@@ -5,6 +5,7 @@ using Fiap.TechChallenge.Execution.Application;
 using Fiap.TechChallenge.Execution.Infrastructure;
 using Fiap.TechChallenge.Execution.Infrastructure.Database;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,12 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>("postgresql", tags: ["ready"]);
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();

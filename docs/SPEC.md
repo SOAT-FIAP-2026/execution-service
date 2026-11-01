@@ -3,7 +3,7 @@
 > **Serviço:** `techchallenge-execution-service`  
 > **Versão:** `v1.0.0` (Fase 4 SOAT — FIAP)  
 > **Framework:** .NET 8 (C# 12)  
-> **Bancos de Dados & Mensageria:** PostgreSQL 16 + RabbitMQ 3.13 + MassTransit 8.3.4  
+> **Bancos de Dados & Mensageria:** PostgreSQL 16 + LavinMQ (AMQP 0-9-1) + MassTransit 8.3.4  
 > **Status de Implementação:** Etapas 1 a 5 concluídas (Domínio, Persistência, Use Cases, REST API e Saga Coreografada)
 
 ---
@@ -57,7 +57,7 @@ flowchart TD
         REPO_IMPL["OrdemProducaoRepository (EF Core 8)"]
         DBCONTEXT["AppDbContext (PostgreSQL 16)"]
         OUTBOX["Transactional Outbox / Inbox (MassTransit)"]
-        MT_CONFIG["MassTransitConfiguration (RabbitMQ 3.13)"]
+        MT_CONFIG["MassTransitConfiguration (LavinMQ / AMQP 0-9-1)"]
         MT_PUB["MassTransitEventPublisher"]
         SSM["SsmSecretResolver (AWS SSM / Local Fallback)"]
     end
@@ -109,7 +109,7 @@ stateDiagram-v2
 
 ## 4. Saga Coreografada e Topologia de Mensageria
 
-A comunicação assíncrona opera via **MassTransit 8.3.4** sobre **RabbitMQ 3.13** com topologia *Publish/Subscribe* e roteamento canônico no namespace `Fiap.TechChallenge.Contracts.Events`.
+A comunicação assíncrona opera via **MassTransit 8.3.4** sobre **LavinMQ** (protocolo AMQP 0-9-1) com topologia *Publish/Subscribe* e roteamento canônico no namespace `Fiap.TechChallenge.Contracts.Events`.
 
 ### 4.1. Fluxo Sequencial da Saga (Caminho Feliz e Compensações)
 
@@ -117,7 +117,7 @@ A comunicação assíncrona opera via **MassTransit 8.3.4** sobre **RabbitMQ 3.1
 sequenceDiagram
     autonumber
     participant OS as ⚙️ OS Service
-    participant RMQ as 📬 RabbitMQ (Topic / Exchanges)
+    participant RMQ as 📬 LavinMQ (Topic / Exchanges)
     participant EXEC as 🔧 Execution Service
     participant BILL as 💳 Billing Service
     participant MEC as 👨‍🔧 Mecânico
@@ -312,7 +312,7 @@ erDiagram
 ### 5.2. Garantias Transacionais do Transactional Outbox
 1. **Atomicidade:** Ao executar qualquer Use Case (ex.: `IniciarDiagnostico`), a chamada `_eventPublisher.PublishAsync(evento)` adiciona o registro na entidade `OutboxMessage` dentro da mesma instância do `AppDbContext`.
 2. O método `_repository.AtualizarAsync(ordem)` executa `await _context.SaveChangesAsync()`, persistindo o agregado e a mensagem em uma **única transação ACID**.
-3. Um worker em segundo plano do MassTransit lê as mensagens gravadas no banco e as despacha para as exchanges do RabbitMQ, garantindo que nenhum evento seja perdido em caso de queda de rede ou indisponibilidade temporária do broker.
+3. Um worker em segundo plano do MassTransit lê as mensagens gravadas no banco e as despacha para as exchanges do LavinMQ, garantindo que nenhum evento seja perdido em caso de queda de rede ou indisponibilidade temporária do broker.
 
 ---
 

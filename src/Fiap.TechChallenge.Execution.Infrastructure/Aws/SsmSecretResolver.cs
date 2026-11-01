@@ -14,7 +14,7 @@ namespace Fiap.TechChallenge.Execution.Infrastructure.Aws;
 public class SsmSecretResolver
 {
     public const string DefaultDbConnectionStringParam = "/techchallenge/prod/execution/db_connection_string";
-    public const string DefaultRabbitMqConnectionStringParam = "/techchallenge/prod/rabbitmq_connection_string";
+    public const string DefaultLavinMqConnectionStringParam = "/techchallenge/prod/lavinmq_connection_string";
     public const string DefaultJwtSecretParam = "/techchallenge/prod/jwt_secret";
 
     private const string SsmPrefix = "ssm:";
@@ -48,13 +48,13 @@ public class SsmSecretResolver
             cancellationToken: cancellationToken);
 
     /// <summary>
-    /// Resolve a string de conexão do RabbitMQ.
+    /// Resolve a string de conexão do LavinMQ (AMQP 0-9-1).
     /// </summary>
-    public Task<string> ResolveRabbitMqConnectionStringAsync(CancellationToken cancellationToken = default) =>
+    public Task<string> ResolveLavinMqConnectionStringAsync(CancellationToken cancellationToken = default) =>
         ResolveSecretAsync(
-            configKeys: ["ConnectionStrings:RabbitMq", "RABBITMQ_CONNECTION_STRING"],
-            ssmParamConfigKeys: ["Ssm:RabbitMqConnectionStringParam", "SSM_RABBITMQ_CONNECTION_STRING_PARAM"],
-            defaultSsmParameterName: DefaultRabbitMqConnectionStringParam,
+            configKeys: ["ConnectionStrings:LavinMq", "LAVINMQ_CONNECTION_STRING"],
+            ssmParamConfigKeys: ["Ssm:LavinMqConnectionStringParam", "SSM_LAVINMQ_CONNECTION_STRING_PARAM"],
+            defaultSsmParameterName: DefaultLavinMqConnectionStringParam,
             cancellationToken: cancellationToken);
 
     /// <summary>

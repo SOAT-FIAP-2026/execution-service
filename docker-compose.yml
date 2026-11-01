@@ -11,11 +11,11 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__ExecutionDb: "Host=execution-db;Port=5432;Database=${POSTGRES_DB:-techchallenge_execution_db};Username=${POSTGRES_USER:-execution};Password=${POSTGRES_PASSWORD:-execution_local_pwd}"
-      ConnectionStrings__RabbitMq: "amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672/"
+      ConnectionStrings__LavinMq: "amqp://${LAVINMQ_USER:-guest}:${LAVINMQ_PASSWORD:-guest}@lavinmq:5672/"
     depends_on:
       execution-db:
         condition: service_healthy
-      rabbitmq:
+      lavinmq:
         condition: service_healthy
     restart: unless-stopped
 
@@ -37,23 +37,20 @@ services:
       timeout: 5s
       retries: 10
 
-  rabbitmq:
-    image: rabbitmq:3.13-management-alpine
-    container_name: execution-rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+  lavinmq:
+    image: cloudamqp/lavinmq:latest
+    container_name: execution-lavinmq
     ports:
-      - "${RABBITMQ_PORT:-5672}:5672"
-      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+      - "${LAVINMQ_PORT:-5672}:5672"
+      - "${LAVINMQ_MANAGEMENT_PORT:-15672}:15672"
     volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
+      - lavinmq-data:/var/lib/lavinmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: ["CMD", "lavinmqctl", "status"]
       interval: 10s
-      timeout: 10s
-      retries: 10
+      timeout: 5s
+      retries: 5
 
 volumes:
   execution-db-data:
-  rabbitmq-data:
+  lavinmq-data:

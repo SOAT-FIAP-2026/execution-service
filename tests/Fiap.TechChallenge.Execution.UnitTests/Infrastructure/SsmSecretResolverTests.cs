@@ -70,29 +70,29 @@ public class SsmSecretResolverTests
     }
 
     [Fact]
-    public async Task ResolveRabbitMqConnectionStringAsync_com_caminho_ssm_direto_deve_buscar_no_ssm()
+    public async Task ResolveLavinMqConnectionStringAsync_com_caminho_ssm_direto_deve_buscar_no_ssm()
     {
         var ssmClient = Substitute.For<IAmazonSimpleSystemsManagement>();
         ssmClient.GetParameterAsync(
-                Arg.Is<GetParameterRequest>(r => r.Name == SsmSecretResolver.DefaultRabbitMqConnectionStringParam),
+                Arg.Is<GetParameterRequest>(r => r.Name == SsmSecretResolver.DefaultLavinMqConnectionStringParam),
                 Arg.Any<CancellationToken>())
             .Returns(new GetParameterResponse
             {
-                Parameter = new Parameter { Value = "amqp://user:pass@rabbitmq.messaging.svc:5672/" }
+                Parameter = new Parameter { Value = "amqp://user:pass@lavinmq.messaging.svc:5672/" }
             });
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:RabbitMq"] = SsmSecretResolver.DefaultRabbitMqConnectionStringParam
+                ["ConnectionStrings:LavinMq"] = SsmSecretResolver.DefaultLavinMqConnectionStringParam
             })
             .Build();
 
         var resolver = new SsmSecretResolver(config, ssmClient);
 
-        var resultado = await resolver.ResolveRabbitMqConnectionStringAsync();
+        var resultado = await resolver.ResolveLavinMqConnectionStringAsync();
 
-        resultado.Should().Be("amqp://user:pass@rabbitmq.messaging.svc:5672/");
+        resultado.Should().Be("amqp://user:pass@lavinmq.messaging.svc:5672/");
     }
 
     [Fact]

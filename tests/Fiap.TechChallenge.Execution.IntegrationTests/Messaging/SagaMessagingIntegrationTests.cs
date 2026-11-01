@@ -40,7 +40,7 @@ public sealed class SagaMessagingIntegrationTests : IAsyncLifetime
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:ExecutionDb"] = _dbFixture.ConnectionString,
-                    ["ConnectionStrings:RabbitMq"] = _rabbitMqContainer.GetConnectionString(),
+                    ["ConnectionStrings:LavinMq"] = _rabbitMqContainer.GetConnectionString(),
                     ["Jwt:Secret"] = "test-secret-at-least-32-chars-long-12345678!",
                     ["Jwt:Issuer"] = "fiap-tech-challenge",
                     ["Jwt:Audience"] = "fiap-api"

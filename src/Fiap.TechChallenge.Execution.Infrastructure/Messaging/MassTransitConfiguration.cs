@@ -10,7 +10,7 @@ namespace Fiap.TechChallenge.Execution.Infrastructure.Messaging;
 
 public static class MassTransitConfiguration
 {
-    public const string DefaultDevRabbitMqConnectionString = "amqp://guest:guest@localhost:5672";
+    public const string DefaultDevLavinMqConnectionString = "amqp://guest:guest@localhost:5672";
 
     public const string QueueOrdemServicoAberta = "execution-ordem-servico-aberta";
     public const string QueueDiagnosticoRejeitado = "execution-diagnostico-rejeitado";
@@ -42,12 +42,12 @@ public static class MassTransitConfiguration
                 o.DuplicateDetectionWindow = TimeSpan.FromMinutes(30);
             });
 
-            // Configuração do transporte (RabbitMQ ou InMemory para testes/local)
+            // Configuração do transporte (LavinMQ via protocolo AMQP 0-9-1 ou InMemory para testes/local)
             var ssmResolver = new SsmSecretResolver(configuration);
-            var rabbitConnectionString = ResolveRabbitMqConnectionString(configuration, ssmResolver);
+            var lavinConnectionString = ResolveLavinMqConnectionString(configuration, ssmResolver);
 
-            if (string.Equals(rabbitConnectionString, "in-memory", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(configuration["RabbitMq:Transport"], "InMemory", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(lavinConnectionString, "in-memory", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(configuration["LavinMq:Transport"], "InMemory", StringComparison.OrdinalIgnoreCase))
             {
                 x.UsingInMemory((context, cfg) =>
                 {
@@ -60,7 +60,7 @@ public static class MassTransitConfiguration
                 {
                     var runtimeResolver = context.GetRequiredService<SsmSecretResolver>();
                     var runtimeConfig = context.GetService<IConfiguration>() ?? configuration;
-                    var connStr = ResolveRabbitMqConnectionString(runtimeConfig, runtimeResolver);
+                    var connStr = ResolveLavinMqConnectionString(runtimeConfig, runtimeResolver);
 
                     cfg.Host(new Uri(connStr));
 
@@ -107,25 +107,25 @@ public static class MassTransitConfiguration
         return services;
     }
 
-    private static string ResolveRabbitMqConnectionString(
+    private static string ResolveLavinMqConnectionString(
         IConfiguration configuration,
         SsmSecretResolver ssmResolver)
     {
-        var configured = configuration.GetConnectionString("RabbitMq")
-            ?? configuration["RABBITMQ_CONNECTION_STRING"]
-            ?? configuration["Ssm:RabbitMqConnectionStringParam"]
-            ?? configuration["SSM_RABBITMQ_CONNECTION_STRING_PARAM"];
+        var configured = configuration.GetConnectionString("LavinMq")
+            ?? configuration["LAVINMQ_CONNECTION_STRING"]
+            ?? configuration["Ssm:LavinMqConnectionStringParam"]
+            ?? configuration["SSM_LAVINMQ_CONNECTION_STRING_PARAM"];
 
         if (!string.IsNullOrWhiteSpace(configured))
         {
-            return ssmResolver.ResolveRabbitMqConnectionStringAsync().GetAwaiter().GetResult();
+            return ssmResolver.ResolveLavinMqConnectionStringAsync().GetAwaiter().GetResult();
         }
 
         if (bool.TryParse(configuration["Ssm:Enabled"] ?? configuration["AWS_SSM_ENABLED"], out var ssmEnabled) && ssmEnabled)
         {
-            return ssmResolver.ResolveRabbitMqConnectionStringAsync().GetAwaiter().GetResult();
+            return ssmResolver.ResolveLavinMqConnectionStringAsync().GetAwaiter().GetResult();
         }
 
-        return DefaultDevRabbitMqConnectionString;
+        return DefaultDevLavinMqConnectionString;
     }
 }
