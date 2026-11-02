@@ -50,7 +50,7 @@ stateDiagram-v2
 |---|---|
 | Runtime | .NET 8 (ASP.NET Core) |
 | Banco | PostgreSQL 16 + EF Core 8 (Npgsql) |
-| Mensageria | LavinMQ (AMQP 0-9-1) + MassTransit 8.x (Outbox/Inbox) |
+| Mensageria | AWS SNS + SQS (Worker SQS e Publisher SNS) + EF Core Outbox |
 | Testes | xUnit, FluentAssertions, NetArchTest, Testcontainers, Reqnroll |
 | Deploy | Docker (non-root) + Kubernetes (EKS, Kustomize) |
 
@@ -60,7 +60,7 @@ stateDiagram-v2
 src/
 ├── Fiap.TechChallenge.Execution.Domain/          # Agregado OrdemProducao, regras e estados
 ├── Fiap.TechChallenge.Execution.Application/     # Casos de uso, queries e consumers
-├── Fiap.TechChallenge.Execution.Infrastructure/  # EF Core, MassTransit, AWS SSM
+├── Fiap.TechChallenge.Execution.Infrastructure/  # EF Core, AWS SQS Worker, AWS SNS, AWS SSM
 └── Fiap.TechChallenge.Execution.Api/             # Controllers, middlewares, composição
 tests/
 └── Fiap.TechChallenge.Execution.UnitTests/       # Unitários + testes de arquitetura
@@ -74,11 +74,10 @@ Regras de dependência (verificadas por teste com NetArchTest): `Domain` não de
 - .NET SDK 8
 - Docker + Docker Compose
 
-### Com Docker Compose (API + PostgreSQL + LavinMQ)
+### Com Docker Compose (API + PostgreSQL + Floci AWS)
 
 ```bash
-cp .env.example .env   # opcional
-docker compose up -d --build
+docker compose -f ../shared/docker-compose.yml up -d --build
 ```
 
 | Recurso | URL |
@@ -86,13 +85,13 @@ docker compose up -d --build
 | Swagger | http://localhost:8082/swagger |
 | Liveness | http://localhost:8082/health/live |
 | Readiness | http://localhost:8082/health/ready |
-| LavinMQ Management | http://localhost:15672 (guest/guest) |
+| Floci UI (AWS Console) | http://localhost:4500 |
 | PostgreSQL | `localhost:5433` — db `techchallenge_execution_db`, user `execution` |
 
 ### Somente a API (dotnet)
 
 ```bash
-docker compose up -d execution-db lavinmq
+docker compose -f ../shared/docker-compose.yml up -d execution-db floci
 dotnet run --project src/Fiap.TechChallenge.Execution.Api
 # http://localhost:5082/swagger
 ```

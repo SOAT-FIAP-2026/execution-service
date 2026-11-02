@@ -1,131 +1,83 @@
+using Amazon.Runtime;
+using Amazon.SimpleNotificationService;
+using Amazon.SQS;
 using Fiap.TechChallenge.Execution.Application.Consumers;
 using Fiap.TechChallenge.Execution.Application.Interfaces;
-using Fiap.TechChallenge.Execution.Infrastructure.Aws;
 using Fiap.TechChallenge.Execution.Infrastructure.Database;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Fiap.TechChallenge.Execution.Infrastructure.Messaging;
-
-public static class MassTransitConfiguration
+namespace Fiap.TechChallenge.Execution.Infrastructure.Messaging
 {
-    public const string DefaultDevLavinMqConnectionString = "amqp://guest:guest@localhost:5672";
-
-    public const string QueueOrdemServicoAberta = "execution-ordem-servico-aberta";
-    public const string QueueDiagnosticoRejeitado = "execution-diagnostico-rejeitado";
-    public const string QueueOrdemServicoLiberadaExecucao = "execution-os-liberada-execucao";
-    public const string QueueOrdemServicoCancelada = "execution-ordem-servico-cancelada";
-
-    public static IServiceCollection AddExecutionMassTransit(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    public static class MassTransitConfiguration
     {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configuration);
-
-        services.AddMassTransit(x =>
+        public static IServiceCollection AddExecutionMessaging(
+            this IServiceCollection services,
+            IConfiguration configuration)
         {
-            x.SetKebabCaseEndpointNameFormatter();
+            ArgumentNullException.ThrowIfNull(services);
+            ArgumentNullException.ThrowIfNull(configuration);
 
-            // Registro dos 4 Consumers da Saga
-            x.AddConsumer<OrdemServicoAbertaConsumer>();
-            x.AddConsumer<DiagnosticoRejeitadoConsumer>();
-            x.AddConsumer<OrdemServicoLiberadaParaExecucaoConsumer>();
-            x.AddConsumer<OrdemServicoCanceladaConsumer>();
+            // 1. Clientes AWS (SQS e SNS) direcionados ao Floci/LocalStack ou AWS nativa
+            var awsServiceUrl = configuration["AWS_SERVICE_URL"]
+                ?? configuration["AWS__ServiceURL"]
+                ?? configuration["AWS_ENDPOINT_URL"];
+            var awsRegion = configuration["AWS_REGION"] ?? configuration["AWS__Region"] ?? "sa-east-1";
+            var credentials = new BasicAWSCredentials(
+                configuration["AWS_ACCESS_KEY_ID"] ?? "test",
+                configuration["AWS_SECRET_ACCESS_KEY"] ?? "test");
 
-            // Configuração do Transactional Outbox / Inbox no PostgreSQL
-            x.AddEntityFrameworkOutbox<AppDbContext>(o =>
+            if (!string.IsNullOrWhiteSpace(awsServiceUrl))
             {
-                o.UsePostgres();
-                o.UseBusOutbox();
-                o.DuplicateDetectionWindow = TimeSpan.FromMinutes(30);
-            });
+                services.AddSingleton<IAmazonSQS>(_ => new AmazonSQSClient(credentials, new AmazonSQSConfig
+                {
+                    ServiceURL = awsServiceUrl,
+                    AuthenticationRegion = awsRegion
+                }));
 
-            // Configuração do transporte (LavinMQ via protocolo AMQP 0-9-1 ou InMemory para testes/local)
-            var ssmResolver = new SsmSecretResolver(configuration);
-            var lavinConnectionString = ResolveLavinMqConnectionString(configuration, ssmResolver);
-
-            if (string.Equals(lavinConnectionString, "in-memory", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(configuration["LavinMq:Transport"], "InMemory", StringComparison.OrdinalIgnoreCase))
+                services.AddSingleton<IAmazonSimpleNotificationService>(_ => new AmazonSimpleNotificationServiceClient(credentials, new AmazonSimpleNotificationServiceConfig
+                {
+                    ServiceURL = awsServiceUrl,
+                    AuthenticationRegion = awsRegion
+                }));
+            }
+            else
             {
+                services.AddSingleton<IAmazonSQS>(_ => new AmazonSQSClient());
+                services.AddSingleton<IAmazonSimpleNotificationService>(_ => new AmazonSimpleNotificationServiceClient());
+            }
+
+            // 2. MassTransit com Transactional Outbox do EF Core (transporte InMemory desacoplado do RabbitMQ)
+            services.AddMassTransit(x =>
+            {
+                x.SetKebabCaseEndpointNameFormatter();
+
+                x.AddConsumer<OrdemServicoAbertaConsumer>();
+                x.AddConsumer<DiagnosticoRejeitadoConsumer>();
+                x.AddConsumer<OrdemServicoLiberadaParaExecucaoConsumer>();
+                x.AddConsumer<OrdemServicoCanceladaConsumer>();
+
+                x.AddEntityFrameworkOutbox<AppDbContext>(o =>
+                {
+                    o.UsePostgres();
+                    o.UseBusOutbox();
+                    o.DuplicateDetectionWindow = TimeSpan.FromMinutes(30);
+                });
+
                 x.UsingInMemory((context, cfg) =>
                 {
                     cfg.ConfigureEndpoints(context);
                 });
-            }
-            else
-            {
-                x.UsingRabbitMq((context, cfg) =>
-                {
-                    var runtimeResolver = context.GetRequiredService<SsmSecretResolver>();
-                    var runtimeConfig = context.GetService<IConfiguration>() ?? configuration;
-                    var connStr = ResolveLavinMqConnectionString(runtimeConfig, runtimeResolver);
+            });
 
-                    cfg.Host(new Uri(connStr));
+            // 3. Publicador de eventos de domínio no tópico AWS SNS
+            services.AddScoped<IEventPublisher, AwsSnsEventPublisher>();
 
-                    // 1. Fila de Abertura de OS (Início do Diagnóstico)
-                    cfg.ReceiveEndpoint(QueueOrdemServicoAberta, e =>
-                    {
-                        e.UseEntityFrameworkOutbox<AppDbContext>(context);
-                        e.UseMessageRetry(r => r.Exponential(5, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2)));
-                        e.ConfigureConsumer<OrdemServicoAbertaConsumer>(context);
-                    });
+            // 4. Worker em background para consumo contínuo da fila AWS SQS
+            services.AddHostedService<ExecutionSqsBackgroundWorker>();
 
-                    // 2. Fila de Diagnóstico Rejeitado (Retorno para Análise Técnica)
-                    cfg.ReceiveEndpoint(QueueDiagnosticoRejeitado, e =>
-                    {
-                        e.UseEntityFrameworkOutbox<AppDbContext>(context);
-                        e.UseMessageRetry(r => r.Exponential(5, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2)));
-                        e.ConfigureConsumer<DiagnosticoRejeitadoConsumer>(context);
-                    });
-
-                    // 3. Fila de OS Liberada para Execução (Entrada na Fila FIFO de Reparos)
-                    cfg.ReceiveEndpoint(QueueOrdemServicoLiberadaExecucao, e =>
-                    {
-                        e.UseEntityFrameworkOutbox<AppDbContext>(context);
-                        e.UseMessageRetry(r => r.Exponential(5, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2)));
-                        e.ConfigureConsumer<OrdemServicoLiberadaParaExecucaoConsumer>(context);
-                    });
-
-                    // 4. Fila de OS Cancelada (Compensação A - Falha Externa)
-                    cfg.ReceiveEndpoint(QueueOrdemServicoCancelada, e =>
-                    {
-                        e.UseEntityFrameworkOutbox<AppDbContext>(context);
-                        e.UseMessageRetry(r => r.Exponential(5, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2)));
-                        e.ConfigureConsumer<OrdemServicoCanceladaConsumer>(context);
-                    });
-
-                    cfg.ConfigureEndpoints(context);
-                });
-            }
-        });
-
-        // Registro do publicador concreto que utiliza o Outbox
-        services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
-
-        return services;
-    }
-
-    private static string ResolveLavinMqConnectionString(
-        IConfiguration configuration,
-        SsmSecretResolver ssmResolver)
-    {
-        var configured = configuration.GetConnectionString("LavinMq")
-            ?? configuration["LAVINMQ_CONNECTION_STRING"]
-            ?? configuration["Ssm:LavinMqConnectionStringParam"]
-            ?? configuration["SSM_LAVINMQ_CONNECTION_STRING_PARAM"];
-
-        if (!string.IsNullOrWhiteSpace(configured))
-        {
-            return ssmResolver.ResolveLavinMqConnectionStringAsync().GetAwaiter().GetResult();
+            return services;
         }
-
-        if (bool.TryParse(configuration["Ssm:Enabled"] ?? configuration["AWS_SSM_ENABLED"], out var ssmEnabled) && ssmEnabled)
-        {
-            return ssmResolver.ResolveLavinMqConnectionStringAsync().GetAwaiter().GetResult();
-        }
-
-        return DefaultDevLavinMqConnectionString;
     }
 }

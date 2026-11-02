@@ -41,8 +41,8 @@ public static class DependencyInjection
         // Registra InMemoryEventPublisher como utilitário para cenários de teste pontual
         services.AddSingleton<InMemoryEventPublisher>();
 
-        // Configuração de mensageria assíncrona MassTransit 8.x + RabbitMQ + Transactional Outbox
-        services.AddExecutionMassTransit(configuration);
+        // Configuração de mensageria assíncrona AWS (SNS + SQS) e Transactional Outbox
+        services.AddExecutionMessaging(configuration);
 
         return services;
     }
