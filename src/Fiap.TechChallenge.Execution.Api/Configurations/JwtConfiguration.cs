@@ -25,8 +25,8 @@ public static class JwtConfiguration
             {
                 var effectiveConfig = runtimeConfig ?? configuration;
                 var secret = ResolveJwtSecretOrFallback(effectiveConfig);
-                var issuer = effectiveConfig["Jwt:Issuer"] ?? "fiap-tech-challenge";
-                var audience = effectiveConfig["Jwt:Audience"] ?? "fiap-api";
+                var issuer = effectiveConfig["Jwt:Issuer"] ?? "TechChallenge";
+                var audience = effectiveConfig["Jwt:Audience"] ?? "techchallenge.com.br";
                 var keyBytes = Encoding.UTF8.GetBytes(secret);
 
                 options.RequireHttpsMetadata = false;
