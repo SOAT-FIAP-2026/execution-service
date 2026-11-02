@@ -5,7 +5,7 @@ Microsserviço de **chão de oficina** do Tech Challenge (Fase 4 — SOAT/FIAP).
 - **Diagnóstico técnico**: o mecânico inspeciona o veículo, aponta o tempo e emite o laudo com serviços/peças sugeridos.
 - **Fila de produção**: fila FIFO das OS liberadas após aprovação e pagamento do orçamento.
 - **Apontamento de tarefas**: início/fim de cada reparo por mecânico.
-- **Comunicação de status** ao OS Service via eventos (Saga coreografada sobre RabbitMQ).
+- **Comunicação de status** ao OS Service via eventos (Saga coreografada sobre AWS SNS / SQS).
 
 > 📋 Plano arquitetural completo: [docs/PLANO_DESACOPLAMENTO_SERVICO_EXECUCAO.md](docs/PLANO_DESACOPLAMENTO_SERVICO_EXECUCAO.md)  
 > 📐 Fluxo de criação da OS: [docs/FLUXO_CRIACAO_ORDEM_SERVICO.md](docs/FLUXO_CRIACAO_ORDEM_SERVICO.md)
@@ -14,17 +14,22 @@ Microsserviço de **chão de oficina** do Tech Challenge (Fase 4 — SOAT/FIAP).
 
 ```mermaid
 flowchart LR
-    OS["⚙️ OS Service<br/>(fase1-tech-challenge)<br/>PostgreSQL"]
-    BILL["💳 Billing Service<br/>MongoDB"]
-    EXEC["🔧 Execution Service<br/>PostgreSQL dedicado"]
-    BUS[("📬 LavinMQ<br/>(AMQP 0-9-1)")]
+    OS["⚙️ os-microservice<br/>AWS Lambda .NET 8<br/>DynamoDB"]
+    BILL["💳 billing-service<br/>PostgreSQL dedicado"]
+    EXEC["🔧 execution-service<br/>PostgreSQL dedicado"]
+    CORE["🏢 fase1-tech-challenge<br/>Core / Catálogo / Clientes"]
+    SNS[("📢 AWS SNS<br/>techchallenge-eventos-stage")]
+    SQS[("📫 AWS SQS<br/>techchallenge-producao-eventos")]
 
-    OS <-->|eventos| BUS
-    BILL <-->|eventos| BUS
-    EXEC <-->|eventos| BUS
+    OS -->|publica eventos| SNS
+    BILL -->|publica eventos| SNS
+    EXEC -->|publica eventos| SNS
+    SNS -->|subscrição| SQS
+    SQS -->|consome eventos| EXEC
+    EXEC -.->|validação staff/mecanico| CORE
 ```
 
-Nenhum serviço acessa o banco de outro. Os contratos de eventos vêm do pacote compartilhado [`Fiap.TechChallenge.Contracts`](../contracts).
+Nenhum serviço acessa o banco de outro. Os contratos de eventos vêm do pacote compartilhado [`Fiap.TechChallenge.Contracts`](../shared/contracts).
 
 ## Máquina de estados (`OrdemProducao`)
 
@@ -82,7 +87,8 @@ docker compose -f ../shared/docker-compose.yml up -d --build
 
 | Recurso | URL |
 |---|---|
-| Swagger | http://localhost:8082/swagger |
+| Swagger UI | http://localhost:8082/swagger |
+| Swagger JSON | http://localhost:8082/swagger/v1/swagger.json |
 | Liveness | http://localhost:8082/health/live |
 | Readiness | http://localhost:8082/health/ready |
 | Floci UI (AWS Console) | http://localhost:4500 |
