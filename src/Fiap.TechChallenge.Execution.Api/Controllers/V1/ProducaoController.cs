@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using Fiap.TechChallenge.Contracts.AuthService;
+using Fiap.TechChallenge.Contracts.ExecutionService;
 using Fiap.TechChallenge.Execution.Application.DTOs;
 using Fiap.TechChallenge.Execution.Application.Queries;
 using Fiap.TechChallenge.Execution.Application.UseCases;
@@ -166,7 +168,7 @@ public sealed class ProducaoController(
 
     private (Guid IdMecanico, string NomeMecanico) ObterIdentidadeMecanico()
     {
-        var rawId = User.FindFirstValue("UsuarioId")
+        var rawId = User.FindFirstValue(JwtAuthConstants.Claims.UsuarioId)
                     ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
                     ?? User.FindFirstValue("sub");
 

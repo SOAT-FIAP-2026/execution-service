@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Fiap.TechChallenge.Execution.Domain\Fiap.TechChallenge.Execution.Domain.csproj" />
+    <ProjectReference Include="..\..\..\shared\src\Fiap.TechChallenge.Contracts\Fiap.TechChallenge.Contracts.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

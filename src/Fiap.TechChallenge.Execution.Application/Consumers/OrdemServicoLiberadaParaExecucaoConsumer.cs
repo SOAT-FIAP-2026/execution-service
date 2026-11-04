@@ -1,4 +1,5 @@
 using Fiap.TechChallenge.Contracts.Events;
+using Fiap.TechChallenge.Contracts.OsService;
 using Fiap.TechChallenge.Execution.Domain.Aggregates.OrdemProducaoAggregate;
 using Fiap.TechChallenge.Execution.Domain.Exceptions;
 using Fiap.TechChallenge.Execution.Domain.Interfaces;

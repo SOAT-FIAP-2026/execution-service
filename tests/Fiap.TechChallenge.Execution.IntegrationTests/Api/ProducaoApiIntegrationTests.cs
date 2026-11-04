@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using Fiap.TechChallenge.Contracts.ExecutionService;
 using Fiap.TechChallenge.Execution.Api.Configurations;
 using Fiap.TechChallenge.Execution.Application.DTOs;
 using Fiap.TechChallenge.Execution.Domain.Aggregates.OrdemProducaoAggregate;

@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      additional_contexts:
+        shared: ../shared
     container_name: execution-api
     ports:
       - "${API_PORT:-8082}:8080"

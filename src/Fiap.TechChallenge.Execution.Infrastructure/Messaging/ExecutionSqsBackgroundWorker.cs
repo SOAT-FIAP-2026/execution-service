@@ -1,7 +1,9 @@
 using System.Text.Json;
 using Amazon.SQS;
 using Amazon.SQS.Model;
+using Fiap.TechChallenge.Contracts.Common;
 using Fiap.TechChallenge.Contracts.Events;
+using Fiap.TechChallenge.Contracts.OsService;
 using Fiap.TechChallenge.Execution.Domain.Aggregates.OrdemProducaoAggregate;
 using Fiap.TechChallenge.Execution.Domain.Interfaces;
 using Fiap.TechChallenge.Execution.Domain.ValueObjects;
@@ -137,7 +139,7 @@ namespace Fiap.TechChallenge.Execution.Infrastructure.Messaging
 
                     if (root.TryGetProperty("MessageAttributes", out var msgAttrs))
                     {
-                        if (msgAttrs.TryGetProperty("tipoEvento", out var teProp) &&
+                        if (msgAttrs.TryGetProperty(SnsMessageAttributes.TipoEvento, out var teProp) &&
                             teProp.TryGetProperty("Value", out var valProp))
                         {
                             tipoEvento = valProp.GetString() ?? string.Empty;
@@ -158,7 +160,7 @@ namespace Fiap.TechChallenge.Execution.Infrastructure.Messaging
                 // Usa payload raw em caso de parsing não JSON
             }
 
-            if (string.IsNullOrEmpty(tipoEvento) && message.MessageAttributes.TryGetValue("tipoEvento", out var attrVal))
+            if (string.IsNullOrEmpty(tipoEvento) && message.MessageAttributes.TryGetValue(SnsMessageAttributes.TipoEvento, out var attrVal))
             {
                 tipoEvento = attrVal.StringValue;
             }

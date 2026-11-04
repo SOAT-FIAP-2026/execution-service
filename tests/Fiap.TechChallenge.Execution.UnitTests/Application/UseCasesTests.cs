@@ -1,4 +1,5 @@
 using Fiap.TechChallenge.Contracts.Events;
+using Fiap.TechChallenge.Contracts.ExecutionService;
 using Fiap.TechChallenge.Execution.Application.DTOs;
 using Fiap.TechChallenge.Execution.Application.Interfaces;
 using Fiap.TechChallenge.Execution.Application.UseCases;
