@@ -5,6 +5,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Restore em camada separada (cache) copiando apenas os .csproj
+COPY --from=shared src/Fiap.TechChallenge.Contracts/Fiap.TechChallenge.Contracts.csproj /shared/src/Fiap.TechChallenge.Contracts/
 COPY src/Fiap.TechChallenge.Execution.Domain/Fiap.TechChallenge.Execution.Domain.csproj src/Fiap.TechChallenge.Execution.Domain/
 COPY src/Fiap.TechChallenge.Execution.Application/Fiap.TechChallenge.Execution.Application.csproj src/Fiap.TechChallenge.Execution.Application/
 COPY src/Fiap.TechChallenge.Execution.Infrastructure/Fiap.TechChallenge.Execution.Infrastructure.csproj src/Fiap.TechChallenge.Execution.Infrastructure/
@@ -12,6 +13,7 @@ COPY src/Fiap.TechChallenge.Execution.Api/Fiap.TechChallenge.Execution.Api.cspro
 
 RUN dotnet restore src/Fiap.TechChallenge.Execution.Api/Fiap.TechChallenge.Execution.Api.csproj
 
+COPY --from=shared src/Fiap.TechChallenge.Contracts/ /shared/src/Fiap.TechChallenge.Contracts/
 COPY src/ src/
 RUN dotnet publish src/Fiap.TechChallenge.Execution.Api/Fiap.TechChallenge.Execution.Api.csproj \
     -c Release \

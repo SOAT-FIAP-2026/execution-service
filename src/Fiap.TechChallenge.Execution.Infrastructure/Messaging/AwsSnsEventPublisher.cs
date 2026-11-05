@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
+using Fiap.TechChallenge.Contracts.Common;
 using Fiap.TechChallenge.Execution.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -51,14 +52,14 @@ namespace Fiap.TechChallenge.Execution.Infrastructure.Messaging
                 Message = jsonPayload,
                 MessageAttributes = new Dictionary<string, MessageAttributeValue>
                 {
-                    ["tipoEvento"] = new() { DataType = "String", StringValue = tipoEvento },
-                    ["origem"] = new() { DataType = "String", StringValue = "execution-service" }
+                    [SnsMessageAttributes.TipoEvento] = new() { DataType = "String", StringValue = tipoEvento },
+                    [SnsMessageAttributes.Origem] = new() { DataType = "String", StringValue = SnsMessageAttributes.Origens.ExecutionService }
                 }
             };
 
             if (!string.IsNullOrWhiteSpace(osIdStr))
             {
-                request.MessageAttributes["idOrdemServico"] = new() { DataType = "String", StringValue = osIdStr };
+                request.MessageAttributes[SnsMessageAttributes.IdOrdemServico] = new() { DataType = "String", StringValue = osIdStr };
             }
 
             _logger.LogInformation(
