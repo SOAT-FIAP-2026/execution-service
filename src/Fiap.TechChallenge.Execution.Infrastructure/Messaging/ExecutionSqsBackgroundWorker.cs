@@ -89,35 +89,49 @@ namespace Fiap.TechChallenge.Execution.Infrastructure.Messaging
         private async Task ProcessarMensagemAsync(Message message, CancellationToken stoppingToken)
         {
             var (conteudoJson, tipoEvento) = ExtrairConteudoETipoEvento(message);
+            var sqsAttrs = message.MessageAttributes?.ToDictionary(k => k.Key, v => (string?)v.Value?.StringValue);
+            var osId = SnsCorrelationHelper.ExtractOsId(message.Body, sqsAttrs);
+            var correlationId = SnsCorrelationHelper.ExtractCorrelationId(message.Body, sqsAttrs, osId);
 
-            _logger.LogInformation("Mensagem SQS recebida. Tipo: {TipoEvento}", tipoEvento);
-
-            using var scope = _scopeFactory.CreateScope();
-            var repository = scope.ServiceProvider.GetRequiredService<IOrdemProducaoRepository>();
-
-            switch (tipoEvento)
+            using (CorrelationContext.Push(correlationId))
+            using (_logger.BeginScope(new Dictionary<string, object?>
             {
-                case nameof(OrdemServicoAbertaEvent):
-                case "OrdemServicoCriada":
-                    await ProcessarAberturaOsAsync(conteudoJson, repository, stoppingToken);
-                    break;
+                [CorrelationContext.LogScopeKey] = correlationId,
+                [CorrelationContext.OsIdScopeKey] = osId,
+                ["event_type"] = tipoEvento
+            }))
+            {
+                _logger.LogInformation(
+                    "Mensagem SQS recebida. Tipo: {TipoEvento}, CorrelationId: {CorrelationId}",
+                    tipoEvento, correlationId);
 
-                case nameof(OrdemServicoLiberadaParaExecucaoEvent):
-                    await ProcessarLiberacaoExecucaoAsync(conteudoJson, repository, stoppingToken);
-                    break;
+                using var scope = _scopeFactory.CreateScope();
+                var repository = scope.ServiceProvider.GetRequiredService<IOrdemProducaoRepository>();
 
-                case nameof(DiagnosticoRejeitadoEvent):
-                    await ProcessarDiagnosticoRejeitadoAsync(conteudoJson, repository, stoppingToken);
-                    break;
+                switch (tipoEvento)
+                {
+                    case nameof(OrdemServicoAbertaEvent):
+                    case "OrdemServicoCriada":
+                        await ProcessarAberturaOsAsync(conteudoJson, repository, stoppingToken);
+                        break;
 
-                case nameof(OrdemServicoCanceladaEvent):
-                case "OrdemServicoCancelada":
-                    await ProcessarCancelamentoOsAsync(conteudoJson, repository, stoppingToken);
-                    break;
+                    case nameof(OrdemServicoLiberadaParaExecucaoEvent):
+                        await ProcessarLiberacaoExecucaoAsync(conteudoJson, repository, stoppingToken);
+                        break;
 
-                default:
-                    _logger.LogDebug("Evento {TipoEvento} ignorado pelo execution-service.", tipoEvento);
-                    break;
+                    case nameof(DiagnosticoRejeitadoEvent):
+                        await ProcessarDiagnosticoRejeitadoAsync(conteudoJson, repository, stoppingToken);
+                        break;
+
+                    case nameof(OrdemServicoCanceladaEvent):
+                    case "OrdemServicoCancelada":
+                        await ProcessarCancelamentoOsAsync(conteudoJson, repository, stoppingToken);
+                        break;
+
+                    default:
+                        _logger.LogDebug("Evento {TipoEvento} ignorado pelo execution-service.", tipoEvento);
+                        break;
+                }
             }
         }
 
@@ -139,8 +153,10 @@ namespace Fiap.TechChallenge.Execution.Infrastructure.Messaging
 
                     if (root.TryGetProperty("MessageAttributes", out var msgAttrs))
                     {
-                        if (msgAttrs.TryGetProperty(SnsMessageAttributes.TipoEvento, out var teProp) &&
-                            teProp.TryGetProperty("Value", out var valProp))
+                        if ((msgAttrs.TryGetProperty(SnsMessageAttributes.TipoEvento, out var teProp) ||
+                             msgAttrs.TryGetProperty("TipoEvento", out teProp)) &&
+                            (teProp.TryGetProperty("Value", out var valProp) ||
+                             teProp.TryGetProperty("value", out valProp)))
                         {
                             tipoEvento = valProp.GetString() ?? string.Empty;
                         }

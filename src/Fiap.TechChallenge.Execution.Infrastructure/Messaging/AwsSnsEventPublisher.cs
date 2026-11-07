@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
+using Fiap.TechChallenge.Contracts;
 using Fiap.TechChallenge.Contracts.Common;
 using Fiap.TechChallenge.Execution.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
@@ -62,9 +63,21 @@ namespace Fiap.TechChallenge.Execution.Infrastructure.Messaging
                 request.MessageAttributes[SnsMessageAttributes.IdOrdemServico] = new() { DataType = "String", StringValue = osIdStr };
             }
 
+            var correlationId = (evento as IntegrationEvent)?.ObterCorrelationId()
+                ?? CorrelationContext.Resolve(fallback: osIdStr);
+
+            if (!string.IsNullOrWhiteSpace(correlationId))
+            {
+                request.MessageAttributes[SnsMessageAttributes.CorrelationId] = new()
+                {
+                    DataType = "String",
+                    StringValue = correlationId
+                };
+            }
+
             _logger.LogInformation(
-                "Publicando evento {TipoEvento} no SNS ({TopicArn}) para OS {OsId}",
-                tipoEvento, _topicArn, osIdStr);
+                "Publicando evento {TipoEvento} no SNS ({TopicArn}) para OS {OsId} [CorrelationId={CorrelationId}]",
+                tipoEvento, _topicArn, osIdStr, correlationId);
 
             await _sns.PublishAsync(request, cancellationToken);
         }
