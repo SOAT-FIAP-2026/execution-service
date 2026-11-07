@@ -7,15 +7,18 @@ using System.Text;
 using Fiap.TechChallenge.Contracts.ExecutionService;
 using Fiap.TechChallenge.Execution.Api.Configurations;
 using Fiap.TechChallenge.Execution.Application.DTOs;
+using Fiap.TechChallenge.Execution.Application.Interfaces;
 using Fiap.TechChallenge.Execution.Domain.Aggregates.OrdemProducaoAggregate;
 using Fiap.TechChallenge.Execution.Domain.ValueObjects;
 using Fiap.TechChallenge.Execution.Infrastructure.Messaging;
 using Fiap.TechChallenge.Execution.IntegrationTests.Database;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
 
@@ -43,6 +46,27 @@ public sealed class ProducaoApiIntegrationTests : IClassFixture<WebApplicationFa
                     ["Jwt:Audience"] = "fiap-api",
                     ["RabbitMq:Transport"] = "InMemory"
                 });
+            });
+
+            builder.ConfigureTestServices(services =>
+            {
+                // Substitui o AwsSnsEventPublisher por MassTransitEventPublisher para testes de integracao,
+                // gravando os eventos no OutboxMessage do PostgreSQL e evitando conexoes externas a AWS/Floci
+                services.RemoveAll<IEventPublisher>();
+                services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
+
+                var sqsWorker = services.FirstOrDefault(d => d.ImplementationType == typeof(ExecutionSqsBackgroundWorker));
+                if (sqsWorker != null)
+                {
+                    services.Remove(sqsWorker);
+                }
+
+                // Remove o BusOutboxDeliveryService para que as mensagens permaneçam no OutboxMessage para asserção
+                var deliveryService = services.FirstOrDefault(d => d.ImplementationType?.Name.Contains("BusOutboxDeliveryService") == true);
+                if (deliveryService != null)
+                {
+                    services.Remove(deliveryService);
+                }
             });
         });
     }
