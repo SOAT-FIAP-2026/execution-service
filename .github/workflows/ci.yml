@@ -55,8 +55,15 @@ jobs:
           dotnet build ${{ env.API_PROJECT }} --configuration Release --no-restore
           dotnet build ${{ env.UNIT_TEST_PROJECT }} --configuration Release --no-restore
 
-      - name: Unit Tests
-        run: dotnet test ${{ env.UNIT_TEST_PROJECT }} --configuration Release --no-build --verbosity normal
+      - name: Unit Tests with coverage
+        run: >
+          dotnet test ${{ env.UNIT_TEST_PROJECT }}
+          --configuration Release
+          --no-build
+          --settings coverlet.runsettings
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
+          --verbosity normal
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

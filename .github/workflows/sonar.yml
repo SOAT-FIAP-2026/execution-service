@@ -1,0 +1,87 @@
+name: SonarCloud
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  API_PROJECT: src/Fiap.TechChallenge.Execution.Api/Fiap.TechChallenge.Execution.Api.csproj
+  UNIT_TEST_PROJECT: tests/Fiap.TechChallenge.Execution.UnitTests/Fiap.TechChallenge.Execution.UnitTests.csproj
+
+jobs:
+  build-and-analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Execution Service
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout shared contracts
+        uses: actions/checkout@v4
+        with:
+          repository: SOAT-FIAP-2026/shared
+          ref: main
+          path: .shared
+          token: ${{ secrets.GH_PAT || github.token }}
+
+      - name: Move shared to sibling directory
+        run: |
+          rm -rf ../shared
+          mv .shared ../shared
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          cache-dependency-path: "**/*.csproj"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install SonarScanner
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Begin SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          dotnet sonarscanner begin
+          /k:"SOAT-FIAP-2026_execution-service"
+          /o:"soat-fiap-2026"
+          /d:sonar.token="$SONAR_TOKEN"
+          /d:sonar.host.url="https://sonarcloud.io"
+          /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml"
+          /d:sonar.coverage.exclusions="**/Migrations/**"
+
+      - name: Build
+        run: |
+          dotnet build ${{ env.API_PROJECT }} --configuration Release
+          dotnet build ${{ env.UNIT_TEST_PROJECT }} --configuration Release
+
+      - name: Test with coverage
+        run: >
+          dotnet test ${{ env.UNIT_TEST_PROJECT }}
+          --configuration Release
+          --no-build
+          --settings coverlet.runsettings
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
+
+      - name: End SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+
