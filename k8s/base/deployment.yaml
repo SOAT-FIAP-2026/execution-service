@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: execution-service
-          image: techchallenge-execution-service:latest
+          image: ghcr.io/soat-fiap-2026/execution-service:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
