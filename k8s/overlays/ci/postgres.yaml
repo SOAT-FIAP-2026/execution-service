@@ -1,0 +1,64 @@
+# PostgreSQL efêmero do job deploy-k8s (cluster kind do CI). Em produção o banco é o RDS.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: execution-postgres
+  namespace: techchallenge
+  labels:
+    app.kubernetes.io/name: execution-postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: techchallenge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: execution-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: execution-postgres
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of: techchallenge
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: techchallenge_execution_db
+            - name: POSTGRES_USER
+              value: execution
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: execution-postgres-secret
+                  key: password
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "execution", "-d", "techchallenge_execution_db"]
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: execution-postgres
+  namespace: techchallenge
+  labels:
+    app.kubernetes.io/name: execution-postgres
+    app.kubernetes.io/part-of: techchallenge
+spec:
+  selector:
+    app.kubernetes.io/name: execution-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

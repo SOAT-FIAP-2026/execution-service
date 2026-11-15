@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Overlay do job deploy-k8s (workflow CD): aplica a base num cluster kind
+# efêmero, com PostgreSQL próprio e a imagem publicada no GHCR (tag "ci").
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - ../../base
+
+images:
+  - name: ghcr.io/soat-fiap-2026/execution-service
+    newTag: ci
