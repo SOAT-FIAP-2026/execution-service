@@ -7,6 +7,7 @@ on:
     paths:
       - "src/**"
       - "Dockerfile"
+      - "k8s/**"
       - ".github/workflows/cd.yml"
   workflow_dispatch:
 
@@ -96,7 +97,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=long,prefix=sha256-
 
       - name: Build and push image
@@ -108,4 +109,76 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-k8s:
+    runs-on: ubuntu-latest
+    needs: docker-build-push
+    env:
+      CLUSTER_NAME: techchallenge-ci
+      NAMESPACE: techchallenge
+      DEPLOYMENT: execution-service
+      IMAGE_TAG: sha256-${{ github.sha }}
+    steps:
+      - name: Checkout Execution Service
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull published image
+        run: |
+          docker pull ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.IMAGE_NAME }}:ci
+
+      - name: Create Kubernetes cluster (kind)
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: ${{ env.CLUSTER_NAME }}
+
+      - name: Load image into the cluster
+        run: kind load docker-image ${{ env.IMAGE_NAME }}:ci --name ${{ env.CLUSTER_NAME }}
+
+      - name: Deploy manifests (k8s/overlays/ci)
+        run: |
+          DB_PASSWORD="$(openssl rand -hex 16)"
+          kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n ${{ env.NAMESPACE }} create secret generic execution-postgres-secret \
+            --from-literal=password="$DB_PASSWORD" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n ${{ env.NAMESPACE }} create secret generic execution-service-secrets \
+            --from-literal=connection-string="Host=execution-postgres;Port=5432;Database=techchallenge_execution_db;Username=execution;Password=$DB_PASSWORD" \
+            --from-literal=jwt-secret="$(openssl rand -hex 32)" --dry-run=client -o yaml | kubectl apply -f -
+          # Banco primeiro: o serviço aplica as migrations na subida.
+          kubectl apply -f k8s/overlays/ci/postgres.yaml
+          kubectl -n ${{ env.NAMESPACE }} rollout status deployment/execution-postgres --timeout=120s
+          kubectl apply -k k8s/overlays/ci
+
+      - name: Wait for rollout
+        run: kubectl -n ${{ env.NAMESPACE }} rollout status deployment/${{ env.DEPLOYMENT }} --timeout=240s
+
+      - name: Smoke test
+        run: |
+          kubectl -n ${{ env.NAMESPACE }} port-forward service/${{ env.DEPLOYMENT }} 8080:8080 > /tmp/port-forward.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/health/ready; then echo; exit 0; fi
+            sleep 2
+          done
+          echo "Health check falhou" >&2
+          exit 1
+
+      - name: Cluster state
+        if: always()
+        run: |
+          kubectl -n ${{ env.NAMESPACE }} get deployments,pods,services -o wide
+          kubectl -n ${{ env.NAMESPACE }} get deployment/${{ env.DEPLOYMENT }} -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+
+      - name: Diagnostics
+        if: failure()
+        run: |
+          kubectl -n ${{ env.NAMESPACE }} describe deployment/${{ env.DEPLOYMENT }}
+          kubectl -n ${{ env.NAMESPACE }} describe pods
+          kubectl -n ${{ env.NAMESPACE }} logs deployment/${{ env.DEPLOYMENT }} --tail=200 || true
 
